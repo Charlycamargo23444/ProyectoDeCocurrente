@@ -1,0 +1,60 @@
+import sqlite3
+import threading
+
+class Mensaje:
+    def __init__(self, usuario_origen, usuario_destino, mensaje):
+        self.usuario_origen = usuario_origen
+        self.usuario_destino = usuario_destino
+        self.mensaje = mensaje
+
+class Productor(threading.Thread):
+    def __init__(self, base_datos, usuario_origen, usuario_destino):
+        super().__init__()
+        self.base_datos = base_datos
+        self.usuario_origen = usuario_origen
+        self.usuario_destino = usuario_destino
+
+    def run(self):
+        while True:
+            # Generar un mensaje
+            mensaje = "Hola, {}!".format(self.usuario_destino)
+
+            # Enviar el mensaje a la base de datos
+            with self.base_datos.cursor() as cursor:
+                cursor.execute("INSERT INTO mensajes (usuario_origen, usuario_destino, mensaje) VALUES (?, ?, ?)", (self.usuario_origen, self.usuario_destino, mensaje))
+                self.base_datos.commit()
+
+class Consumidor(threading.Thread):
+    def __init__(self, base_datos, usuario):
+        super().__init__()
+        self.base_datos = base_datos
+        self.usuario = usuario
+
+    def run(self):
+        while True:
+            # Leer un mensaje de la base de datos
+            with self.base_datos.cursor() as cursor:
+                cursor.execute("SELECT usuario_origen, mensaje FROM mensajes WHERE usuario_destino = ?", (self.usuario,))
+                mensaje = cursor.fetchone()
+
+            # Mostrar el mensaje al usuario
+            if mensaje is not None:
+                print(mensaje[0], mensaje[1])
+
+if __name__ == "__main__":
+    # Crear la base de datos
+    base_datos = sqlite3.connect("chat.db")
+
+    # Crear los hilos productores
+    productores = [Productor(base_datos, "Usuario 1", "Usuario 2") for i in range(10)]
+
+    # Crear los hilos consumidores
+    consumidores = [Consumidor(base_datos, "Usuario 2") for i in range(10)]
+
+    # Iniciar los hilos
+    for hilo in productores + consumidores:
+        hilo.start()
+
+    # Esperar a que terminen los hilos
+    for hilo in productores + consumidores:
+        hilo.join()
