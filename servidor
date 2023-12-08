@@ -1,0 +1,55 @@
+import socket
+import argparse
+import threading 
+import psycopg2
+
+parser = argparse.ArgumentParser(description = "Este es el servidor para el demo multithreaded socket")
+parser.add_argument('--host', metavar = 'host', type = str, nargs = '?', default = socket.gethostname())
+parser.add_argument('--port', metavar = 'port', type = int, nargs = '?', default = 9999)
+args = parser.parse_args()
+
+print(f"Ejecutando el servidor en: {args.host} y puerto: {args.port}")
+
+database_url = "postgresql://postgres:123456@localhost:5432/Concurrente_proyecto"
+
+sck = socket.socket()
+sck.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+try: 
+	sck.bind((args.host, args.port))
+	sck.listen(5)
+except Exception as e:
+	raise SystemExit(f"No pudimos conectar al servidor con el host {args.host} al puerto: {args.port}, porque: {e}")
+
+
+def on_new_client(client, connection):
+	ip = connection[0]
+	port = connection[1]
+	print(f"La nueva conexión fue hecha con la ip: {ip}, y puerto: {port}!")
+	while True:
+		msg = client.recv(1024)
+		if msg.decode() == 'salir':
+			break
+		print(f"El cliente dijo: {msg.decode()}")
+		reply = f"Me has dicho: {msg.decode()}"
+		client.sendall(reply.encode('utf-8'))
+		
+		connection, cursor = psycopg2.connect(database_url)
+		cursor.execute("INSERT INTO conversations (client_message, server_response) VALUES (%s, %s)",(msg.decode(), reply),)
+	connection.commit()
+	connection.close()
+	                
+	print(f"El cliente con ip: {ip}, y puerto: {port}, Se ha desconectado exitosamente")
+	client.close()
+
+while True:
+	try: 
+		client, ip = sck.accept()
+		threading._start_new_thread(on_new_client,(client, ip))
+	except KeyboardInterrupt:
+		print(f"Exitosamente desconectándonos del servidor")
+	except Exception as e:
+		print(f"Esto no era esperado {e}")
+
+sck.close()
+

@@ -1,0 +1,38 @@
+import socket 
+import argparse
+import psycopg2
+
+parser = argparse.ArgumentParser(description = "Este es el servidor para el demo multithreaded socket")
+parser.add_argument('--host', metavar = 'host', type = str, nargs = '?', default = socket.gethostname())
+parser.add_argument('--port', metavar = 'port', type = int, nargs = '?', default = 9999)
+args = parser.parse_args()
+
+print(f"Connecting to server: {args.host} on port: {args.port}")
+
+database_url = "postgresql://postgres:123456@localhost:5432/Concurrente_proyecto"
+
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sck:
+	try:
+		sck.connect((args.host, args.port))
+	except Exception as e:
+		raise SystemExit(f"No pudimos conectar al servidor con el host {args.host} al puerto: {args.port}, porque: {e}")
+
+	while True:
+		msg = input("¿Qué deseas enviar al servidor?: ")
+		sck.sendall(msg.encode('utf-8'))
+		if msg =='salir':
+			print("El cliente se ha despedido")
+			break
+		data = sck.recv(1024)
+		
+		connection=psycopg2.connect("postgresql://postgres:123456@localhost:5432/Concurrente_proyecto")
+		cursor = connection.cursor()
+cursor.execute(
+      "INSERT INTO conversations (client_message, server_response) VALUES (%s, %s)",
+      (msg, data.decode()),
+    )
+connection.commit()
+cursor.close()
+connection.close()
+
+print(f"La respuesta del servidor fue: {data.decode()}")
