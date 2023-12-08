@@ -21,7 +21,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sck:
 		msg = input("¿Qué deseas enviar al servidor?: ") //El botón para enviar al servidor
 		sck.sendall(msg.encode('utf-8'))
 		if msg =='salir':
-			print("El cliente se ha despedido")
+			print("El cliente se ha despedido") //Imprime el mensaje de despedida
 			break
 		data = sck.recv(1024)
 		
