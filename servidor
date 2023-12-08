@@ -47,7 +47,7 @@ while True:
 		client, ip = sck.accept()
 		threading._start_new_thread(on_new_client,(client, ip))
 	except KeyboardInterrupt:
-		print(f"Exitosamente desconectándonos del servidor")
+		print(f"Exitosamente desconectándonos del servidor")//Imprime el mensaje de la desconexión del servidor 
 	except Exception as e:
 		print(f"Esto no era esperado {e}")
 
