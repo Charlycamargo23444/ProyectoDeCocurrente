@@ -18,7 +18,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sck:
 		raise SystemExit(f"No pudimos conectar al servidor con el host {args.host} al puerto: {args.port}, porque: {e}")
 
 	while True:
-		msg = input("¿Qué deseas enviar al servidor?: ")
+		msg = input("¿Qué deseas enviar al servidor?: ") //El botón para enviar al servidor
 		sck.sendall(msg.encode('utf-8'))
 		if msg =='salir':
 			print("El cliente se ha despedido")
